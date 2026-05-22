@@ -2,17 +2,30 @@
   "name": "next-content",
   "type": "module",
   "version": "1.0.0",
-  "description": "A starter for creating a TypeScript package.",
-  "author": "Author Name <author.name@mail.com>",
+  "description": "A powerful, typed content parser for Next.js, Node.js, and Astro-like architectures. Bring your markdown content to life with Zod validation.",
+  "author": "sshuvo",
   "license": "MIT",
-  "homepage": "https://github.com/author/library#readme",
+  "homepage": "https://github.com/sshuvoo/next-content#readme",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/author/library.git"
+    "url": "git+https://github.com/sshuvoo/next-content.git"
   },
   "bugs": {
-    "url": "https://github.com/author/library/issues"
+    "url": "https://github.com/sshuvoo/next-content/issues"
   },
+  "keywords": [
+    "nextjs",
+    "content",
+    "markdown",
+    "mdx",
+    "gray-matter",
+    "zod",
+    "astro",
+    "static-site-generator",
+    "ssg",
+    "blog",
+    "parser"
+  ],
   "exports": {
     ".": "./lib/index.mjs",
     "./package.json": "./package.json"

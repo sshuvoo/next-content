@@ -8,18 +8,22 @@ import * as z from 'zod'
 export async function parseFiles<T extends z.ZodType>(
   folder_path: string,
   options: TParseFilesOptions<T> = {
-    preFilter: () => true,
-    postFilter: () => true,
     schema: z.any().optional() as unknown as T,
   },
 ): Promise<TParseFile<T>[]> {
   const { preFilter, postFilter, schema } = options
+  const isPreFilterFunc = typeof preFilter === 'function'
+  if (preFilter && !isPreFilterFunc)
+    throw new Error('preFilter must be a filter callback function')
+  const isPostFilterFunc = typeof postFilter === 'function'
+  if (postFilter && !isPostFilterFunc)
+    throw new Error('postFilter must be a filter callback function')
   const resolvedPath = resolvePath(folder_path)
   const filesPath = await fs.readdir(resolvedPath)
   const filterPaths = filesPath.filter((file_path) => {
     if (!isSupportedFile(file_path)) return false
-    if (!file_path.startsWith('_')) return false
-    return preFilter!(file_path)
+    if (file_path.startsWith('_')) return false
+    return isPreFilterFunc ? preFilter(file_path) : true
   })
 
   const promises = filterPaths.map(async (file_path) => {
@@ -41,9 +45,9 @@ export async function parseFiles<T extends z.ZodType>(
 
   const fileContents = await Promise.all(promises)
 
-  const filteredContents = fileContents.filter((item) =>
-    postFilter!(item.props),
-  )
+  if (!isPostFilterFunc) return fileContents
+
+  const filteredContents = fileContents.filter((item) => postFilter(item.props))
 
   return filteredContents
 }

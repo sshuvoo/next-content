@@ -20,16 +20,12 @@ export async function parseFile<T extends z.ZodType>(
     const content = parsedContent.content
     const slug = slugify(file_path)
 
-    const { success, data, error } = schema.safeParse(frontmatter)
+    const { success, data: props, error } = schema.safeParse(frontmatter)
     if (!success) {
       throw new Error(z.prettifyError(error))
     }
 
-    return {
-      slug,
-      frontmatter: data,
-      content,
-    }
+    return { slug, props, content }
   } catch (error) {
     throw new Error(
       `Failed to read file at ${file_path}: ${error instanceof Error ? error.message : String(error)}`,

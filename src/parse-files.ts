@@ -28,25 +28,21 @@ export async function parseFiles<T extends z.ZodType>(
     const resolvedPath = resolvePath(filePathFull)
     const rawContent = await fs.readFile(resolvedPath, 'utf-8')
     const parsedContent = matter(rawContent)
-    const frontmatter = JSON.parse(JSON.stringify(parsedContent.data)) as T
+    const props = JSON.parse(JSON.stringify(parsedContent.data)) as T
     const content = parsedContent.content
 
-    const { success, data, error } = schema.safeParse(frontmatter)
+    const { success, data, error } = schema.safeParse(props)
     if (!success) {
       throw new Error(z.prettifyError(error))
     }
 
-    return {
-      slug,
-      frontmatter: data,
-      content,
-    }
+    return { slug, props: data, content }
   })
 
   const fileContents = await Promise.all(promises)
 
   const filteredContents = fileContents.filter((item) =>
-    postFilter!(item.frontmatter),
+    postFilter!(item.props),
   )
 
   return filteredContents

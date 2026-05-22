@@ -1,7 +1,7 @@
 {
   "name": "next-content",
   "type": "module",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "A powerful, typed content parser for Next.js, Node.js, and Astro-like architectures. Bring your markdown content to life with Zod validation.",
   "author": "sshuvo",
   "license": "MIT",

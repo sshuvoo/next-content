@@ -14,14 +14,14 @@
     "url": "https://github.com/author/library/issues"
   },
   "exports": {
-    ".": "./dist/index.mjs",
+    ".": "./lib/index.mjs",
     "./package.json": "./package.json"
   },
-  "main": "./dist/index.mjs",
-  "module": "./dist/index.mjs",
-  "types": "./dist/index.d.mts",
+  "main": "./lib/index.mjs",
+  "module": "./lib/index.mjs",
+  "types": "./lib/index.d.mts",
   "files": [
-    "dist"
+    "lib"
   ],
   "scripts": {
     "build": "tsdown",
@@ -41,5 +41,8 @@
   },
   "dependencies": {
     "gray-matter": "^4.0.3"
+  },
+  "peerDependencies": {
+    "zod": "^4.0.0"
   }
 }

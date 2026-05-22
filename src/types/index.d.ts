@@ -9,5 +9,5 @@ export type TParseFile<T extends z.ZodType = z.ZodType> = {
 export type TParseFilesOptions<T extends z.ZodType = z.ZodType> = {
   schema: T
   preFilter?: (file_path: string) => boolean
-  postFilter?: (props: z.infer<T>) => boolean
+  postFilter?: (props: z.infer<T>, slug: string) => boolean
 }

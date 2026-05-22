@@ -47,7 +47,9 @@ export async function parseFiles<T extends z.ZodType>(
 
   if (!isPostFilterFunc) return fileContents
 
-  const filteredContents = fileContents.filter((item) => postFilter(item.props))
+  const filteredContents = fileContents.filter((item) =>
+    postFilter(item.props, item.slug),
+  )
 
   return filteredContents
 }

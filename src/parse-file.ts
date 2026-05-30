@@ -1,8 +1,9 @@
 import matter from 'gray-matter'
+import yaml from 'js-yaml'
 import * as fs from 'node:fs/promises'
+import * as z from 'zod'
 import type { TParseFile } from './types'
 import { isSupportedFile, resolvePath, slugify } from './utils'
-import * as z from 'zod'
 
 export async function parseFile<T extends z.ZodType>(
   file_path: string,
@@ -15,8 +16,12 @@ export async function parseFile<T extends z.ZodType>(
     }
     const resolvedPath = resolvePath(file_path)
     const rawContent = await fs.readFile(resolvedPath, 'utf-8')
-    const parsedContent = matter(rawContent)
-    const frontmatter = JSON.parse(JSON.stringify(parsedContent.data))
+    const parsedContent = matter(rawContent, {
+      engines: {
+        yaml: (s) => yaml.load(s, { schema: yaml.JSON_SCHEMA }) as object,
+      },
+    })
+    const frontmatter = parsedContent.data
     const content = parsedContent.content
     const slug = slugify(file_path)
 

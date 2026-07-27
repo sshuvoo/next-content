@@ -74,7 +74,7 @@ describe('ContentRegistry', () => {
 
   it('should throw an error if querying an unregistered collection in getEntry', async () => {
     const registry = new ContentRegistry({
-      collections: [],
+      collections: [] as Collection<any, any>[],
     })
 
     await expect(registry.getEntry('unknown' as any, 'post-1')).rejects.toThrow(
@@ -129,5 +129,127 @@ describe('ContentRegistry', () => {
     expect(subset).toHaveLength(1)
     expect(subset[0].id).toBe('post-1')
   })
+
+  it('should throw validation error when frontmatter is invalid', async () => {
+    const invalidDir = resolve(process.cwd(), 'temp-test-invalid/posts')
+    await fs.mkdir(invalidDir, { recursive: true })
+    await fs.writeFile(
+      resolve(invalidDir, 'invalid-post.md'),
+      '---\ntitle: 12345\n---\n\nInvalid Content',
+    )
+
+    try {
+      const posts = new Collection({
+        path: 'posts',
+        basePath: 'temp-test-invalid',
+        schema: z.object({
+          title: z.string(),
+        }),
+      })
+
+      const registry = new ContentRegistry({
+        collections: [posts],
+      })
+
+      await expect(registry.getCollection('posts')).rejects.toThrow(
+        'Validation error in file "invalid-post.md"',
+      )
+    } finally {
+      await fs.rm(resolve(process.cwd(), 'temp-test-invalid'), {
+        recursive: true,
+        force: true,
+      })
+    }
+  })
+
+  it('should support async transform callback', async () => {
+    const posts = new Collection({
+      path: 'posts',
+      basePath: 'temp-test-content',
+      schema: z.object({
+        title: z.string(),
+        author: z.string(),
+      }),
+      transform: async (entry) => {
+        await new Promise((resolve) => setTimeout(resolve, 10))
+        return { ...entry, asyncTransformed: true }
+      },
+    })
+
+    const registry = new ContentRegistry({
+      collections: [posts],
+    })
+
+    const collection = await registry.getCollection('posts')
+    expect(collection).toHaveLength(2)
+    expect((collection[0] as any).asyncTransformed).toBe(true)
+  })
+
+  it('should parse YAML date objects natively', async () => {
+    const dateDir = resolve(process.cwd(), 'temp-test-date/posts')
+    await fs.mkdir(dateDir, { recursive: true })
+    await fs.writeFile(
+      resolve(dateDir, 'dated.md'),
+      '---\ntitle: Dated Post\ndate: 2026-07-27\n---\n\nContent',
+    )
+
+    try {
+      const posts = new Collection({
+        path: 'posts',
+        basePath: 'temp-test-date',
+        schema: z.object({
+          title: z.string(),
+          date: z.date(),
+        }),
+      })
+
+      const registry = new ContentRegistry({
+        collections: [posts],
+      })
+
+      const collection = await registry.getCollection('posts')
+      expect(collection).toHaveLength(1)
+      expect(collection[0].data.date).toBeInstanceOf(Date)
+    } finally {
+      await fs.rm(resolve(process.cwd(), 'temp-test-date'), {
+        recursive: true,
+        force: true,
+      })
+    }
+  })
+
+  it('should ignore subdirectories matching extensions without throwing EISDIR', async () => {
+    const dirWithFolder = resolve(process.cwd(), 'temp-test-subdir/posts')
+    const subFolder = resolve(dirWithFolder, 'nested.md')
+    await fs.mkdir(subFolder, { recursive: true })
+    await fs.writeFile(
+      resolve(dirWithFolder, 'actual.md'),
+      '---\ntitle: Actual Post\n---\n\nContent',
+    )
+
+    try {
+      const posts = new Collection({
+        path: 'posts',
+        basePath: 'temp-test-subdir',
+        schema: z.object({
+          title: z.string(),
+        }),
+      })
+
+      const registry = new ContentRegistry({
+        collections: [posts],
+      })
+
+      const collection = await registry.getCollection('posts')
+      expect(collection).toHaveLength(1)
+      expect(collection[0].id).toBe('actual')
+    } finally {
+      await fs.rm(resolve(process.cwd(), 'temp-test-subdir'), {
+        recursive: true,
+        force: true,
+      })
+    }
+  })
 })
+
 

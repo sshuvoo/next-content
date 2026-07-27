@@ -15,7 +15,6 @@ export class ContentRegistry<
   #basePath: string
   #extensions: string[]
   #genId?: ContentRegistryConfig<C>['genId']
-  #onInvalid?: ContentRegistryConfig<C>['onInvalid']
 
   constructor(config: ContentRegistryConfig<C>) {
     this.#collections = new Map(
@@ -27,7 +26,6 @@ export class ContentRegistry<
       : ['.md', '.mdx']
 
     this.#genId = config.genId
-    this.#onInvalid = config.onInvalid
   }
 
   public async getCollection<P extends C[number]['path']>(
@@ -44,73 +42,74 @@ export class ContentRegistry<
       )
     }
 
-    try {
-      const absDir = resolve(
-        cwd(),
-        collection.basePath || this.#basePath,
-        collection.path,
-      )
-      const filesPath = await fs.readdir(absDir)
+    const absDir = resolve(
+      cwd(),
+      collection.basePath || this.#basePath,
+      collection.path,
+    )
+    const filesPath = await fs.readdir(absDir)
 
-      const allowedExts = collection.extensions || this.#extensions
+    const allowedExts = collection.extensions || this.#extensions
 
-      const extFilters = filesPath.filter((file_path) =>
-        allowedExts.some((ext) => file_path.endsWith(ext)),
-      )
+    const extFilters = filesPath.filter((file_path) =>
+      allowedExts.some((ext) => file_path.endsWith(ext)),
+    )
 
-      const getId = collection.genId || this.#genId || slugify
+    const getId = collection.genId || this.#genId || slugify
 
-      const promises = extFilters.map(async (file_path) => {
-        const absPath = resolve(absDir, file_path)
-        const rawContent = await fs.readFile(absPath, 'utf-8')
-        const parsedContent = matter(rawContent, {
-          engines: {
-            yaml: (s) => yaml.load(s, { schema: yaml.JSON_SCHEMA }) as object,
-          },
-        })
-        const props = parsedContent.data
-        const content = parsedContent.content
-        const id = getId(file_path, props)
+    const promises = extFilters.map(async (file_path) => {
+      const absPath = resolve(absDir, file_path)
+      const stat = await fs.stat(absPath)
+      if (!stat.isFile()) return null
 
-        const { success, data, error } = collection.schema.safeParse(props)
-        if (!success) {
-          throw new Error(z.prettifyError(error))
-        }
-
-        return { id, data, content }
+      const rawContent = await fs.readFile(absPath, 'utf-8')
+      const parsedContent = matter(rawContent, {
+        engines: {
+          yaml: (s) => yaml.load(s) as object,
+        },
       })
+      const props = parsedContent.data
+      const content = parsedContent.content
+      const id = getId(file_path, props)
 
-      let fileContents = await Promise.all(promises)
-
-      const filterFunc = collection.filter
-      if (typeof filterFunc === 'function') {
-        fileContents = fileContents.filter((entry) => filterFunc(entry))
+      const { success, data, error } = collection.schema.safeParse(props)
+      if (!success) {
+        throw new Error(
+          `Validation error in file "${file_path}":\n${z.prettifyError(error)}`,
+        )
       }
 
-      const sortFunc = collection.sort
-      if (typeof sortFunc === 'function') {
-        fileContents = fileContents.sort(sortFunc)
-      }
+      return { id, data, content }
+    })
 
-      const transformFunc = collection.transform
-      if (typeof transformFunc === 'function') {
-        fileContents = fileContents.map((entry) => transformFunc(entry))
-      }
+    const rawFileContents = await Promise.all(promises)
+    let fileContents = rawFileContents.filter(
+      (entry): entry is NonNullable<typeof entry> => entry !== null,
+    )
 
-      return fileContents as (Extract<
-        C[number],
-        { path: P }
-      > extends Collection<infer S, P>
-        ? Entry<S>
-        : Entry)[]
-    } catch (error) {
-      const onInvalidFunc = collection.onInvalid || this.#onInvalid
-      if (typeof onInvalidFunc === 'function') {
-        console.error(error)
-        onInvalidFunc(error as Error)
-      }
-      return []
+    const filterFunc = collection.filter
+    if (typeof filterFunc === 'function') {
+      fileContents = fileContents.filter((entry) => filterFunc(entry))
     }
+
+    const sortFunc = collection.sort
+    if (typeof sortFunc === 'function') {
+      fileContents = fileContents.sort(sortFunc)
+    }
+
+    const transformFunc = collection.transform
+    if (typeof transformFunc === 'function') {
+      fileContents = await Promise.all(
+        fileContents.map(async (entry) => await transformFunc(entry)),
+      )
+    }
+
+    return fileContents as (Extract<C[number], { path: P }> extends Collection<
+      infer S,
+      P
+    >
+      ? Entry<S>
+      : Entry)[]
   }
 
   public async getEntry<P extends C[number]['path']>(

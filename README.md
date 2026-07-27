@@ -156,7 +156,6 @@ const blogCollection = new Collection({
 | `filter` | `Function` | No | Keep all entries | Predicate function to include/exclude entries. |
 | `sort` | `Function` | No | Natural filesystem order | Comparator function to sort collection entries. |
 | `transform` | `Function` | No | Return entry unchanged | Mutates or enriches entry data before returning. |
-| `onInvalid` | `Function` | No | Registry `onInvalid` (or throw Zod error) | Callback function executed when frontmatter validation fails. |
 
 ---
 
@@ -302,17 +301,16 @@ export const content = new ContentRegistry({
   collections: [blog, docs],
   // Optional registry-level fallbacks:
   extensions: ['.md', '.mdx'],
-  onInvalid: (error) => console.error(error),
 })
 ```
 
 #### Fallback Configuration Cascade
 
-`next-content` uses a flexible hierarchical fallback system for infrastructure settings (`basePath`, `extensions`, `genId`, `onInvalid`):
+`next-content` uses a flexible hierarchical fallback system for infrastructure settings (`basePath`, `extensions`, `genId`):
 ```text
 Collection Option  ➡️  Registry Option  ➡️  Library Default
 ```
-If a `Collection` does not specify `basePath`, `extensions`, `genId`, or `onInvalid`, it automatically falls back to the setting defined in `ContentRegistry`. Collection-specific transformations, sorting, and filtering (`transform`, `sort`, `filter`) are configured directly at the `Collection` level.
+If a `Collection` does not specify `basePath`, `extensions`, or `genId`, it automatically falls back to the setting defined in `ContentRegistry`. Collection-specific transformations, sorting, and filtering (`transform`, `sort`, `filter`) are configured directly at the `Collection` level.
 
 ---
 
@@ -334,7 +332,7 @@ const post = await content.getEntry('blog', 'getting-started')
 if (!post) {
   notFound() // Next.js 404
 }
-console.log(post.title, post.content)
+console.log(post.data.title, post.content)
 ```
 
 #### 3. `getEntries(path, ids)`
@@ -457,25 +455,7 @@ run()
 
 ## 🛠️ Edge Cases & Advanced Scenarios
 
-### Edge Case 1: Custom Error Handling with `onInvalid`
-
-By default, if frontmatter fails Zod schema validation, `next-content` throws an error and fails the build.  
-If you want to log errors without breaking CI/CD builds or handle invalid files gracefully:
-
-```typescript
-export const blog = new Collection({
-  path: 'blog',
-  schema: z.object({
-    title: z.string(),
-    publishedAt: z.string(),
-  }),
-  onInvalid: (error) => {
-    console.warn('⚠️ Skipping invalid post file:', error.message)
-  },
-})
-```
-
-### Edge Case 2: Multi-Collection Author Relationships
+### Edge Case 1: Multi-Collection Author Relationships
 
 Link entries across collections (e.g. associating a blog post to an author collection by ID):
 

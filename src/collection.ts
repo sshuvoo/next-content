@@ -13,7 +13,6 @@ export class Collection<
   readonly filter?: CollectionConfig<T, P>['filter']
   readonly sort?: CollectionConfig<T, P>['sort']
   readonly transform?: CollectionConfig<T, P>['transform']
-  readonly onInvalid?: CollectionConfig<T, P>['onInvalid']
 
   constructor(config: CollectionConfig<T, P>) {
     this.schema = config.schema
@@ -24,6 +23,5 @@ export class Collection<
     this.filter = config.filter
     this.sort = config.sort
     this.transform = config.transform
-    this.onInvalid = config.onInvalid
   }
 }

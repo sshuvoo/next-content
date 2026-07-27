@@ -1,4 +1,4 @@
-import type { Collection } from '@/collection'
+import type { Collection } from '../collection'
 import type z from 'zod'
 
 export interface Entry<T = any> {
@@ -18,8 +18,7 @@ export interface CollectionConfig<
   genId?: (filePath: string, data: z.infer<T>) => string
   filter?: (entry: Entry<T>) => boolean
   sort?: (a: Entry<T>, b: Entry<T>) => number
-  transform?: (entry: Entry<T>) => any
-  onInvalid?: (error: Error) => void
+  transform?: (entry: Entry<T>) => any | Promise<any>
 }
 
 export interface ContentRegistryConfig<
@@ -29,6 +28,5 @@ export interface ContentRegistryConfig<
   basePath?: string
   extensions?: string[]
   genId?: (filePath: string, data: any) => string
-  onInvalid?: (error: Error) => void
 }
 

@@ -1,6 +1,9 @@
-import { expect, test } from 'vitest'
-import { fn } from '../src'
+import { describe, expect, it } from 'vitest'
+import { Collection, ContentRegistry } from '../src'
 
-test('fn', () => {
-  expect(fn()).toBe('Hello, tsdown!')
+describe('Exports', () => {
+  it('should export Collection and ContentRegistry', () => {
+    expect(Collection).toBeDefined()
+    expect(ContentRegistry).toBeDefined()
+  })
 })

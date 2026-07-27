@@ -1,13 +1,34 @@
+import type { Collection } from '@/collection'
 import type z from 'zod'
 
-export type TParseFile<T extends z.ZodType = z.ZodType> = {
-  slug: string
-  props: z.infer<T>
+export interface Entry<T = any> {
+  id: string
+  data: z.infer<T>
   content: string
 }
 
-export type TParseFilesOptions<T extends z.ZodType = z.ZodType> = {
+export interface CollectionConfig<
+  T extends z.ZodType = z.ZodType,
+  P extends string = string,
+> {
   schema: T
-  preFilter?: (file_path: string) => boolean
-  postFilter?: (props: z.infer<T>, slug: string) => boolean
+  basePath?: string
+  path: P
+  extensions?: string[]
+  genId?: (filePath: string, data: z.infer<T>) => string
+  filter?: (entry: Entry<T>) => boolean
+  sort?: (a: Entry<T>, b: Entry<T>) => number
+  transform?: (entry: Entry<T>) => any
+  onInvalid?: (error: Error) => void
 }
+
+export interface ContentRegistryConfig<
+  C extends readonly Collection<any, any>[] = readonly Collection<any, any>[],
+> {
+  collections: C
+  basePath?: string
+  extensions?: string[]
+  genId?: (filePath: string, data: any) => string
+  onInvalid?: (error: Error) => void
+}
+
